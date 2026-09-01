@@ -6,6 +6,24 @@ import AttendanceFlow from "./attendance-flow";
 
 type Props = { params: Promise<{ slug: string }> };
 
+function LocationIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
 export default async function PublicKegiatanPage({ params }: Props) {
   const { slug } = await params;
   const kegiatan = await prisma.kegiatan.findUnique({ where: { slug } });
@@ -14,18 +32,39 @@ export default async function PublicKegiatanPage({ params }: Props) {
   const status = computeKegiatanStatus(kegiatan);
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Daftar Hadir Digital</p>
-          <h1 className="mt-1 text-lg font-semibold text-gray-900">{kegiatan.nama}</h1>
-          <p className="mt-1 text-sm text-gray-500">{kegiatan.lokasi}</p>
-          <p className="text-xs text-gray-400">
-            {formatWita(kegiatan.waktuMulai)} — {formatWita(kegiatan.waktuSelesai)}
+    <main className="flex flex-1 items-center justify-center bg-gradient-to-b from-green-50 to-gray-50 px-4 py-10">
+      <div className="w-full max-w-sm">
+        <div className="rounded-t-3xl bg-gradient-to-br from-green-600 to-green-800 px-6 pt-7 pb-8 text-white shadow-lg">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-green-100">
+            Tiket Daftar Hadir Digital
           </p>
+          <h1 className="mt-2 text-center text-xl font-bold leading-snug">{kegiatan.nama}</h1>
+
+          <div className="mt-5 space-y-2.5">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                <LocationIcon />
+              </span>
+              <span className="text-sm text-green-50">{kegiatan.lokasi}</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                <ClockIcon />
+              </span>
+              <span className="text-sm text-green-50">
+                {formatWita(kegiatan.waktuMulai)} — {formatWita(kegiatan.waktuSelesai)}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-6 border-t border-gray-100 pt-6">
+        <div className="relative h-0">
+          <div className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-gradient-to-b from-green-50 to-gray-50" />
+          <div className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-gradient-to-b from-green-50 to-gray-50" />
+        </div>
+        <div className="mx-6 border-t-2 border-dashed border-gray-300" />
+
+        <div className="rounded-b-3xl bg-white px-6 pt-7 pb-7 shadow-lg">
           {status === "upcoming" && (
             <p className="text-center text-sm text-gray-600">
               Kegiatan ini belum dibuka. Silakan kembali saat waktu kegiatan dimulai.

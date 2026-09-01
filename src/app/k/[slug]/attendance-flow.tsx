@@ -12,6 +12,16 @@ type LookupResult =
   | { alreadyRecorded: true; nama: string; waktuKonfirmasi: string }
   | { alreadyRecorded: false; nim: string; nama: string; programStudi: string; pertanyaan: Pertanyaan[] };
 
+function CheckBadge() {
+  return (
+    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 text-green-600">
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    </div>
+  );
+}
+
 export default function AttendanceFlow({ slug }: Props) {
   const [nim, setNim] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,14 +99,12 @@ export default function AttendanceFlow({ slug }: Props) {
   if (success) {
     return (
       <div className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
-          ✓
-        </div>
-        <h2 className="mt-3 text-lg font-semibold text-gray-900">Kehadiran Tercatat</h2>
+        <CheckBadge />
+        <h2 className="mt-4 text-lg font-bold text-gray-900">Kehadiran Tercatat!</h2>
         <p className="mt-1 text-sm text-gray-600">
-          Terima kasih, <span className="font-medium">{success.nama}</span>.
+          Terima kasih, <span className="font-semibold">{success.nama}</span>.
         </p>
-        <p className="text-xs text-gray-400">{success.waktuKonfirmasi}</p>
+        <p className="mt-1 text-xs text-gray-400">{success.waktuKonfirmasi}</p>
       </div>
     );
   }
@@ -104,11 +112,11 @@ export default function AttendanceFlow({ slug }: Props) {
   if (lookup?.alreadyRecorded) {
     return (
       <div className="text-center">
-        <h2 className="text-lg font-semibold text-gray-900">Anda Sudah Tercatat Hadir</h2>
+        <h2 className="text-lg font-bold text-gray-900">Anda Sudah Tercatat Hadir</h2>
         <p className="mt-1 text-sm text-gray-600">
-          <span className="font-medium">{lookup.nama}</span> tercatat hadir pada {lookup.waktuKonfirmasi}.
+          <span className="font-semibold">{lookup.nama}</span> tercatat hadir pada {lookup.waktuKonfirmasi}.
         </p>
-        <button onClick={reset} className="mt-4 text-sm text-gray-500 underline">
+        <button onClick={reset} className="mt-4 text-sm font-medium text-green-700 underline">
           Kembali
         </button>
       </div>
@@ -118,19 +126,19 @@ export default function AttendanceFlow({ slug }: Props) {
   if (lookup && !lookup.alreadyRecorded) {
     return (
       <div>
-        <h2 className="text-center text-lg font-semibold text-gray-900">Konfirmasi Kehadiran</h2>
-        <div className="mt-4 space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
+        <h2 className="text-center text-lg font-bold text-gray-900">Konfirmasi Kehadiran</h2>
+        <div className="mt-4 space-y-2 rounded-xl bg-green-50 p-4 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-500">NIM</span>
-            <span className="font-medium text-gray-900">{lookup.nim}</span>
+            <span className="font-semibold text-gray-900">{lookup.nim}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Nama</span>
-            <span className="font-medium text-gray-900">{lookup.nama}</span>
+            <span className="font-semibold text-gray-900">{lookup.nama}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Program Studi</span>
-            <span className="font-medium text-gray-900">{lookup.programStudi}</span>
+            <span className="font-semibold text-gray-900">{lookup.programStudi}</span>
           </div>
         </div>
 
@@ -147,7 +155,7 @@ export default function AttendanceFlow({ slug }: Props) {
                   rows={2}
                   value={jawaban[p.id] ?? ""}
                   onChange={(e) => setJawaban((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
                 />
               </div>
             ))}
@@ -160,14 +168,14 @@ export default function AttendanceFlow({ slug }: Props) {
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-green-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-green-800 disabled:opacity-50"
           >
             {loading ? "Memproses..." : "Konfirmasi Hadir"}
           </button>
           <button
             onClick={reset}
             disabled={loading}
-            className="rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Batal
           </button>
@@ -179,7 +187,7 @@ export default function AttendanceFlow({ slug }: Props) {
   return (
     <form onSubmit={handleLookup}>
       <label htmlFor="nim" className="block text-sm font-medium text-gray-700">
-        NIM
+        Nomor Induk Mahasiswa (NIM)
       </label>
       <input
         id="nim"
@@ -190,7 +198,7 @@ export default function AttendanceFlow({ slug }: Props) {
         value={nim}
         onChange={(e) => setNim(e.target.value)}
         placeholder="Masukkan NIM Anda"
-        className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-gray-900 focus:outline-none"
+        className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-3 text-base focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
       />
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -198,7 +206,7 @@ export default function AttendanceFlow({ slug }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-4 w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        className="mt-4 w-full rounded-xl bg-green-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-green-800 disabled:opacity-50"
       >
         {loading ? "Memeriksa..." : "Lanjutkan"}
       </button>
