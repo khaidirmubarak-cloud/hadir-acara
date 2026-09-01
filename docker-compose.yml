@@ -1,6 +1,10 @@
-# Kalau VPS kampus sudah punya instance Postgres bersama: hapus service `db` di bawah,
+# Alur deploy utama proyek ini sekarang cPanel Node.js App (Passenger) + MariaDB milik
+# hosting kampus, lihat CLAUDE.md/plan untuk langkahnya. File ini disiapkan sebagai jalur
+# alternatif kalau nanti tersedia VPS dengan akses Docker.
+#
+# Kalau VPS itu sudah punya instance MySQL/MariaDB bersama: hapus service `db` di bawah,
 # hapus `depends_on`, dan hapus override DATABASE_URL di `environment:` (biarkan nilai
-# dari .env lewat `env_file:` dipakai, arahkan ke instance Postgres yang sudah ada).
+# dari .env lewat `env_file:` dipakai, arahkan ke instance yang sudah ada).
 services:
   app:
     build: .
@@ -10,22 +14,23 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://daftar_hadir:${DB_PASSWORD:-daftar_hadir}@db:5432/daftar_hadir?schema=public
+      DATABASE_URL: mysql://daftar_hadir:${DB_PASSWORD:-daftar_hadir}@db:3306/daftar_hadir
     depends_on:
       db:
         condition: service_healthy
 
   db:
-    image: postgres:16-alpine
+    image: mariadb:11
     restart: unless-stopped
     environment:
-      POSTGRES_USER: daftar_hadir
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-daftar_hadir}
-      POSTGRES_DB: daftar_hadir
+      MARIADB_USER: daftar_hadir
+      MARIADB_PASSWORD: ${DB_PASSWORD:-daftar_hadir}
+      MARIADB_DATABASE: daftar_hadir
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U daftar_hadir"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 10

@@ -1,10 +1,12 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
+// MySQL/MariaDB, bukan PostgreSQL seperti rencana awal — environment deploy yang
+// tersedia (cPanel shared hosting kampus) hanya menyediakan MariaDB, tidak ada
+// PostgreSQL/Docker. Skema tabel tidak berubah, hanya provider datasource-nya.
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -23,7 +25,7 @@ model Kegiatan {
   id            String   @id @default(uuid())
   slug          String   @unique
   nama          String
-  deskripsi     String?
+  deskripsi     String?  @db.Text
   lokasi        String
   waktuMulai    DateTime
   waktuSelesai  DateTime
@@ -47,7 +49,7 @@ model Kehadiran {
   programStudiSevimaId  String?
   waktuKonfirmasi       DateTime @default(now())
   ipAddress             String?
-  userAgent             String?
+  userAgent             String?  @db.Text
 
   kegiatan Kegiatan @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
 
