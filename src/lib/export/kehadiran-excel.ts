@@ -7,8 +7,6 @@ export type ExportKehadiranRow = {
   nama: string;
   programStudi: string | null;
   waktuKonfirmasi: Date;
-  // Satu jawaban per pertanyaan, urutan mengikuti `pertanyaan` di bawah.
-  jawaban: string[];
 };
 
 export type ExportKegiatanInfo = {
@@ -18,20 +16,14 @@ export type ExportKegiatanInfo = {
   waktuSelesai: Date;
 };
 
-export type ExportPertanyaan = {
-  id: string;
-  teks: string;
-};
-
 export async function buildKehadiranExcel(
   kegiatan: ExportKegiatanInfo,
   rows: ExportKehadiranRow[],
-  pertanyaan: ExportPertanyaan[] = [],
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Daftar Hadir");
 
-  sheet.addRow(["UNIVERSITAS ISLAM NEGERI (UIN) PALOPO"]).font = { bold: true, size: 13 };
+  sheet.addRow(["UNIVERSITAS ISLAM NEGERI PALOPO"]).font = { bold: true, size: 13 };
   sheet.addRow(["Laporan Daftar Hadir Kegiatan"]).font = { bold: true, size: 11 };
   sheet.addRow([]);
   sheet.addRow(["Kegiatan", kegiatan.nama]);
@@ -40,15 +32,7 @@ export async function buildKehadiranExcel(
   sheet.addRow(["Jumlah Peserta", String(rows.length)]);
   sheet.addRow([]);
 
-  const header = sheet.addRow([
-    "No",
-    "Tipe",
-    "NIM/NIP",
-    "Nama",
-    "Program Studi",
-    "Waktu Konfirmasi",
-    ...pertanyaan.map((p) => p.teks),
-  ]);
+  const header = sheet.addRow(["No", "Tipe", "NIM/NIP", "Nama", "Program Studi", "Waktu Konfirmasi"]);
   header.font = { bold: true };
   header.eachCell((cell) => {
     cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -63,7 +47,6 @@ export async function buildKehadiranExcel(
       row.nama,
       row.programStudi ?? "—",
       formatWita(row.waktuKonfirmasi),
-      ...row.jawaban,
     ]);
     r.eachCell((cell) => {
       cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -76,9 +59,6 @@ export async function buildKehadiranExcel(
   sheet.getColumn(4).width = 32;
   sheet.getColumn(5).width = 32;
   sheet.getColumn(6).width = 22;
-  pertanyaan.forEach((_, i) => {
-    sheet.getColumn(7 + i).width = 36;
-  });
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);

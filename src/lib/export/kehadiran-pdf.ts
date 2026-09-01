@@ -1,30 +1,17 @@
 import PDFDocument from "pdfkit";
 import { formatWita } from "@/lib/timezone";
-import type { ExportKegiatanInfo, ExportKehadiranRow, ExportPertanyaan } from "./kehadiran-excel";
+import type { ExportKegiatanInfo, ExportKehadiranRow } from "./kehadiran-excel";
 
-const BASE_COLS = [
-  { label: "No", width: 25 },
-  { label: "Tipe", width: 65 },
-  { label: "NIM/NIP", width: 85 },
-  { label: "Nama", width: 120 },
-  { label: "Program Studi", width: 120 },
-  { label: "Waktu Konfirmasi", width: 95 },
+const COLS = [
+  { label: "No", width: 30 },
+  { label: "Tipe", width: 75 },
+  { label: "NIM/NIP", width: 95 },
+  { label: "Nama", width: 140 },
+  { label: "Program Studi", width: 140 },
+  { label: "Waktu Konfirmasi", width: 105 },
 ];
 
-export async function buildKehadiranPdf(
-  kegiatan: ExportKegiatanInfo,
-  rows: ExportKehadiranRow[],
-  pertanyaan: ExportPertanyaan[] = [],
-): Promise<Buffer> {
-  // Sisa lebar halaman A4 (dikurangi margin) dibagi rata ke kolom pertanyaan,
-  // supaya tabel tetap muat satu halaman berapa pun jumlah pertanyaannya.
-  const pageContentWidth = 595.28 - 40 * 2;
-  const baseWidth = BASE_COLS.reduce((sum, c) => sum + c.width, 0);
-  const questionColWidth = pertanyaan.length > 0
-    ? Math.max(80, (pageContentWidth - baseWidth) / pertanyaan.length)
-    : 0;
-  const COLS = [...BASE_COLS, ...pertanyaan.map((p) => ({ label: p.teks, width: questionColWidth }))];
-
+export async function buildKehadiranPdf(kegiatan: ExportKegiatanInfo, rows: ExportKehadiranRow[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     const chunks: Buffer[] = [];
@@ -36,7 +23,7 @@ export async function buildKehadiranPdf(
     const right = doc.page.width - doc.page.margins.right;
     const bottom = doc.page.height - doc.page.margins.bottom;
 
-    doc.font("Helvetica-Bold").fontSize(13).text("UNIVERSITAS ISLAM NEGERI (UIN) PALOPO", left, doc.y, {
+    doc.font("Helvetica-Bold").fontSize(13).text("UNIVERSITAS ISLAM NEGERI PALOPO", left, doc.y, {
       width: right - left,
       align: "center",
     });
@@ -95,7 +82,6 @@ export async function buildKehadiranPdf(
         row.nama,
         row.programStudi ?? "—",
         formatWita(row.waktuKonfirmasi),
-        ...row.jawaban,
       ];
       values.forEach((val, i) => {
         const x = colX(i);
