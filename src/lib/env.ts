@@ -11,7 +11,7 @@ const envSchema = z.object({
   ADMIN_USERNAME: z.string().default("admin"),
   ADMIN_PASSWORD: z.string().default(""),
 
-  SEVIMA_BASE_URL: z.string().default("https://siakadcloud.sevima.com"),
+  SEVIMA_BASE_URL: z.string().default("https://api.sevimaplatform.com"),
   SEVIMA_APP_KEY: z.string().default(""),
   SEVIMA_SECRET_KEY: z.string().default(""),
   SEVIMA_TIMEOUT_MS: z.coerce.number().default(8000),
