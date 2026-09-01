@@ -56,16 +56,22 @@ model Pertanyaan {
   @@index([kegiatanId])
 }
 
+enum TipePeserta {
+  MAHASISWA
+  PEGAWAI
+}
+
 model Kehadiran {
-  id                    String   @id @default(uuid())
+  id                    String      @id @default(uuid())
   kegiatanId            String
-  nim                   String
+  tipePeserta           TipePeserta @default(MAHASISWA)
+  nim                   String // NIM (mahasiswa) atau NIP (pegawai/dosen) — lihat tipePeserta
   nama                  String
-  programStudi          String
+  programStudi          String? // hanya terisi untuk mahasiswa; Sevima tidak menyediakan unit/jabatan pegawai
   programStudiSevimaId  String?
-  waktuKonfirmasi       DateTime @default(now())
+  waktuKonfirmasi       DateTime    @default(now())
   ipAddress             String?
-  userAgent             String?  @db.Text
+  userAgent             String?     @db.Text
 
   kegiatan Kegiatan           @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
   jawaban  JawabanKuisioner[]

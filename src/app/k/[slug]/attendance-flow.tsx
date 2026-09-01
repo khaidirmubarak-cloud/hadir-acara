@@ -2,15 +2,34 @@
 
 import { useState } from "react";
 
+type Tipe = "mahasiswa" | "pegawai";
+
 type Props = {
   slug: string;
+  tipe: Tipe;
+  // Ditampilkan hanya di layar input identitas awal (bukan di layar konfirmasi/sukses),
+  // dipakai untuk tautan pindah ke alur mahasiswa/pegawai yang lain.
+  belowAction?: React.ReactNode;
 };
 
 type Pertanyaan = { id: string; teks: string };
 
 type LookupResult =
   | { alreadyRecorded: true; nama: string; waktuKonfirmasi: string }
-  | { alreadyRecorded: false; nim: string; nama: string; programStudi: string; pertanyaan: Pertanyaan[] };
+  | { alreadyRecorded: false; nim: string; nama: string; programStudi: string | null; pertanyaan: Pertanyaan[] };
+
+const LABEL: Record<Tipe, { identitas: string; placeholder: string; identitasSingkat: string }> = {
+  mahasiswa: {
+    identitas: "Nomor Induk Mahasiswa (NIM)",
+    placeholder: "Masukkan NIM Anda",
+    identitasSingkat: "NIM",
+  },
+  pegawai: {
+    identitas: "Nomor Induk Pegawai (NIP)",
+    placeholder: "Masukkan NIP Anda",
+    identitasSingkat: "NIP",
+  },
+};
 
 function CheckBadge() {
   return (
@@ -22,13 +41,15 @@ function CheckBadge() {
   );
 }
 
-export default function AttendanceFlow({ slug }: Props) {
+export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
   const [nim, setNim] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookup, setLookup] = useState<LookupResult | null>(null);
   const [jawaban, setJawaban] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<{ nama: string; waktuKonfirmasi: string } | null>(null);
+
+  const label = LABEL[tipe];
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -38,11 +59,11 @@ export default function AttendanceFlow({ slug }: Props) {
       const res = await fetch(`/api/public/kegiatan/${slug}/lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nim }),
+        body: JSON.stringify({ tipe, nim }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Gagal memeriksa NIM");
+        setError(data.error ?? `Gagal memeriksa ${label.identitasSingkat}`);
         return;
       }
       setLookup(data);
@@ -73,7 +94,7 @@ export default function AttendanceFlow({ slug }: Props) {
       const res = await fetch(`/api/public/kegiatan/${slug}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nim, jawaban: jawabanPayload }),
+        body: JSON.stringify({ tipe, nim, jawaban: jawabanPayload }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -129,17 +150,19 @@ export default function AttendanceFlow({ slug }: Props) {
         <h2 className="text-center text-lg font-bold text-gray-900">Konfirmasi Kehadiran</h2>
         <div className="mt-4 space-y-2 rounded-xl bg-green-50 p-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-500">NIM</span>
+            <span className="text-gray-500">{label.identitasSingkat}</span>
             <span className="font-semibold text-gray-900">{lookup.nim}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Nama</span>
             <span className="font-semibold text-gray-900">{lookup.nama}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-500">Program Studi</span>
-            <span className="font-semibold text-gray-900">{lookup.programStudi}</span>
-          </div>
+          {lookup.programStudi && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Program Studi</span>
+              <span className="font-semibold text-gray-900">{lookup.programStudi}</span>
+            </div>
+          )}
         </div>
 
         {lookup.pertanyaan.length > 0 && (
@@ -187,7 +210,7 @@ export default function AttendanceFlow({ slug }: Props) {
   return (
     <form onSubmit={handleLookup}>
       <label htmlFor="nim" className="block text-sm font-medium text-gray-700">
-        Nomor Induk Mahasiswa (NIM)
+        {label.identitas}
       </label>
       <input
         id="nim"
@@ -197,7 +220,7 @@ export default function AttendanceFlow({ slug }: Props) {
         autoFocus
         value={nim}
         onChange={(e) => setNim(e.target.value)}
-        placeholder="Masukkan NIM Anda"
+        placeholder={label.placeholder}
         className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-3 text-base focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
       />
 
@@ -210,6 +233,8 @@ export default function AttendanceFlow({ slug }: Props) {
       >
         {loading ? "Memeriksa..." : "Lanjutkan"}
       </button>
+
+      {belowAction}
     </form>
   );
 }

@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { computeKegiatanStatus } from "@/lib/kegiatan-status";
 import { kehadiranConfirmSchema } from "@/lib/validation/kehadiran";
-import { fetchMahasiswa, SevimaError } from "@/lib/integrations/sevima";
+import { fetchMahasiswa, fetchPegawai, SevimaError } from "@/lib/integrations/sevima";
 import { limiters, consumeRateLimit, getClientIp, RateLimitExceededError } from "@/lib/rate-limit";
 import { formatWita } from "@/lib/timezone";
 
@@ -28,13 +28,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const body = await req.json().catch(() => null);
-    // Hanya `nim` yang dipakai — nama/prodi dari body (jika ada) diabaikan; keduanya
-    // SELALU diambil ulang dari Sevima di sini, tidak pernah dipercaya dari klien.
+    // Hanya `tipe`+`nim` yang dipakai — nama/prodi dari body (jika ada) diabaikan;
+    // keduanya SELALU diambil ulang dari Sevima di sini, tidak pernah dipercaya dari klien.
     const parsed = kehadiranConfirmSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Data tidak valid" }, { status: 400 });
     }
-    const { nim, jawaban } = parsed.data;
+    const { tipe, nim, jawaban } = parsed.data;
 
     const pertanyaan = await prisma.pertanyaan.findMany({ where: { kegiatanId: kegiatan.id } });
     const jawabanByPertanyaanId = new Map(jawaban.map((j) => [j.pertanyaanId, j.jawaban]));
@@ -44,17 +44,32 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     await consumeRateLimit(limiters.externalLookup, ip);
-    const mahasiswa = await fetchMahasiswa(nim);
+
+    const identitas =
+      tipe === "pegawai"
+        ? await fetchPegawai(nim).then((p) => ({
+            nim: p.nip,
+            nama: p.nama,
+            programStudi: null as string | null,
+            programStudiSevimaId: null as string | null,
+          }))
+        : await fetchMahasiswa(nim).then((m) => ({
+            nim: m.nim,
+            nama: m.nama,
+            programStudi: m.programStudi as string | null,
+            programStudiSevimaId: (m.programStudiSevimaId || null) as string | null,
+          }));
 
     const userAgent = req.headers.get("user-agent") ?? undefined;
 
     const kehadiran = await prisma.kehadiran.create({
       data: {
         kegiatanId: kegiatan.id,
-        nim: mahasiswa.nim,
-        nama: mahasiswa.nama,
-        programStudi: mahasiswa.programStudi,
-        programStudiSevimaId: mahasiswa.programStudiSevimaId || null,
+        tipePeserta: tipe === "pegawai" ? "PEGAWAI" : "MAHASISWA",
+        nim: identitas.nim,
+        nama: identitas.nama,
+        programStudi: identitas.programStudi,
+        programStudiSevimaId: identitas.programStudiSevimaId,
         ipAddress: ip,
         userAgent,
         jawaban: {

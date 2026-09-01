@@ -2,9 +2,10 @@ import ExcelJS from "exceljs";
 import { formatWita } from "@/lib/timezone";
 
 export type ExportKehadiranRow = {
+  tipePeserta: "MAHASISWA" | "PEGAWAI";
   nim: string;
   nama: string;
-  programStudi: string;
+  programStudi: string | null;
   waktuKonfirmasi: Date;
   // Satu jawaban per pertanyaan, urutan mengikuti `pertanyaan` di bawah.
   jawaban: string[];
@@ -41,7 +42,8 @@ export async function buildKehadiranExcel(
 
   const header = sheet.addRow([
     "No",
-    "NIM",
+    "Tipe",
+    "NIM/NIP",
     "Nama",
     "Program Studi",
     "Waktu Konfirmasi",
@@ -56,9 +58,10 @@ export async function buildKehadiranExcel(
   rows.forEach((row, index) => {
     const r = sheet.addRow([
       index + 1,
+      row.tipePeserta === "PEGAWAI" ? "Dosen/Tendik" : "Mahasiswa",
       row.nim,
       row.nama,
-      row.programStudi,
+      row.programStudi ?? "—",
       formatWita(row.waktuKonfirmasi),
       ...row.jawaban,
     ]);
@@ -68,12 +71,13 @@ export async function buildKehadiranExcel(
   });
 
   sheet.getColumn(1).width = 6;
-  sheet.getColumn(2).width = 18;
-  sheet.getColumn(3).width = 32;
+  sheet.getColumn(2).width = 14;
+  sheet.getColumn(3).width = 18;
   sheet.getColumn(4).width = 32;
-  sheet.getColumn(5).width = 22;
+  sheet.getColumn(5).width = 32;
+  sheet.getColumn(6).width = 22;
   pertanyaan.forEach((_, i) => {
-    sheet.getColumn(6 + i).width = 36;
+    sheet.getColumn(7 + i).width = 36;
   });
 
   const buffer = await workbook.xlsx.writeBuffer();

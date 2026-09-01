@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Kehadiran` ADD COLUMN `tipePeserta` ENUM('MAHASISWA', 'PEGAWAI') NOT NULL DEFAULT 'MAHASISWA',
+    MODIFY `programStudi` VARCHAR(191) NULL;

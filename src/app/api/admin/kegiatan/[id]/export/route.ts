@@ -30,6 +30,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const rows = kegiatan.kehadiran.map((k) => {
     const jawabanById = new Map(k.jawaban.map((j) => [j.pertanyaanId, j.jawaban]));
     return {
+      tipePeserta: k.tipePeserta,
       nim: k.nim,
       nama: k.nama,
       programStudi: k.programStudi,

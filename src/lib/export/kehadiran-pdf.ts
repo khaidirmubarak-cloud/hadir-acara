@@ -3,11 +3,12 @@ import { formatWita } from "@/lib/timezone";
 import type { ExportKegiatanInfo, ExportKehadiranRow, ExportPertanyaan } from "./kehadiran-excel";
 
 const BASE_COLS = [
-  { label: "No", width: 30 },
-  { label: "NIM", width: 90 },
-  { label: "Nama", width: 130 },
-  { label: "Program Studi", width: 130 },
-  { label: "Waktu Konfirmasi", width: 100 },
+  { label: "No", width: 25 },
+  { label: "Tipe", width: 65 },
+  { label: "NIM/NIP", width: 85 },
+  { label: "Nama", width: 120 },
+  { label: "Program Studi", width: 120 },
+  { label: "Waktu Konfirmasi", width: 95 },
 ];
 
 export async function buildKehadiranPdf(
@@ -89,9 +90,10 @@ export async function buildKehadiranPdf(
       const top = doc.y;
       const values = [
         String(index + 1),
+        row.tipePeserta === "PEGAWAI" ? "Dosen/Tendik" : "Mahasiswa",
         row.nim,
         row.nama,
-        row.programStudi,
+        row.programStudi ?? "—",
         formatWita(row.waktuKonfirmasi),
         ...row.jawaban,
       ];

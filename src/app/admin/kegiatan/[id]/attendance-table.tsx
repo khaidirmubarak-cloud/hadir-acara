@@ -6,12 +6,26 @@ type JawabanRow = { pertanyaanId: string; jawaban: string };
 
 type KehadiranRow = {
   id: string;
+  tipePeserta: "MAHASISWA" | "PEGAWAI";
   nim: string;
   nama: string;
-  programStudi: string;
+  programStudi: string | null;
   waktuKonfirmasi: string;
   jawaban: JawabanRow[];
 };
+
+function TipeBadge({ tipe }: { tipe: KehadiranRow["tipePeserta"] }) {
+  const isPegawai = tipe === "PEGAWAI";
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+        isPegawai ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+      }`}
+    >
+      {isPegawai ? "Dosen/Tendik" : "Mahasiswa"}
+    </span>
+  );
+}
 
 type Pertanyaan = { id: string; teks: string };
 
@@ -91,7 +105,8 @@ export default function AttendanceTable({
           <table className="w-full text-left text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
-                <th className="px-4 py-2">NIM</th>
+                <th className="px-4 py-2">Tipe</th>
+                <th className="px-4 py-2">NIM/NIP</th>
                 <th className="px-4 py-2">Nama</th>
                 <th className="px-4 py-2">Program Studi</th>
                 <th className="px-4 py-2">Waktu</th>
@@ -106,9 +121,12 @@ export default function AttendanceTable({
             <tbody className="divide-y divide-gray-100">
               {rows.map((r) => (
                 <tr key={r.id}>
+                  <td className="px-4 py-2">
+                    <TipeBadge tipe={r.tipePeserta} />
+                  </td>
                   <td className="px-4 py-2 text-gray-500">{r.nim}</td>
                   <td className="px-4 py-2 font-medium text-gray-900">{r.nama}</td>
-                  <td className="px-4 py-2 text-gray-500">{r.programStudi}</td>
+                  <td className="px-4 py-2 text-gray-500">{r.programStudi ?? "—"}</td>
                   <td className="px-4 py-2 text-gray-500">{formatWaktu(r.waktuKonfirmasi)}</td>
                   {pertanyaan.map((p) => (
                     <td key={p.id} className="max-w-xs px-4 py-2 text-gray-500">

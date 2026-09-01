@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { computeKegiatanStatus } from "@/lib/kegiatan-status";
-import { TicketHeader } from "./ticket-header";
-import AttendanceFlow from "./attendance-flow";
+import { TicketHeader } from "../ticket-header";
+import AttendanceFlow from "../attendance-flow";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export default async function PublicKegiatanPage({ params }: Props) {
+export default async function PublicKegiatanPegawaiPage({ params }: Props) {
   const { slug } = await params;
   const kegiatan = await prisma.kegiatan.findUnique({ where: { slug } });
   if (!kegiatan) notFound();
@@ -22,6 +22,7 @@ export default async function PublicKegiatanPage({ params }: Props) {
           lokasi={kegiatan.lokasi}
           waktuMulai={kegiatan.waktuMulai}
           waktuSelesai={kegiatan.waktuSelesai}
+          label="Daftar Hadir Dosen/Tenaga Kependidikan"
         />
 
         <div className="rounded-b-3xl bg-white px-6 pt-7 pb-7 shadow-lg">
@@ -38,13 +39,13 @@ export default async function PublicKegiatanPage({ params }: Props) {
           {status === "open" && (
             <AttendanceFlow
               slug={slug}
-              tipe="mahasiswa"
+              tipe="pegawai"
               belowAction={
                 <Link
-                  href={`/k/${slug}/pegawai`}
+                  href={`/k/${slug}`}
                   className="mt-3 block w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  Saya Dosen/Tenaga Kependidikan
+                  Saya Mahasiswa
                 </Link>
               }
             />

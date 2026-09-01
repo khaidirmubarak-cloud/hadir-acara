@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { computeKegiatanStatus } from "@/lib/kegiatan-status";
 import { kehadiranLookupSchema } from "@/lib/validation/kehadiran";
-import { fetchMahasiswa, SevimaError } from "@/lib/integrations/sevima";
+import { fetchMahasiswa, fetchPegawai, SevimaError } from "@/lib/integrations/sevima";
 import { limiters, consumeRateLimit, getClientIp, RateLimitExceededError } from "@/lib/rate-limit";
 import { formatWita } from "@/lib/timezone";
 
@@ -29,9 +29,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     const body = await req.json().catch(() => null);
     const parsed = kehadiranLookupSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "NIM tidak valid" }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Data tidak valid" }, { status: 400 });
     }
-    const { nim } = parsed.data;
+    const { tipe, nim } = parsed.data;
 
     const already = await prisma.kehadiran.findUnique({
       where: { kegiatanId_nim: { kegiatanId: kegiatan.id, nim } },
@@ -45,7 +45,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     await consumeRateLimit(limiters.externalLookup, ip);
-    const mahasiswa = await fetchMahasiswa(nim);
 
     const pertanyaan = await prisma.pertanyaan.findMany({
       where: { kegiatanId: kegiatan.id },
@@ -53,8 +52,22 @@ export async function POST(req: NextRequest, { params }: Params) {
       select: { id: true, teks: true },
     });
 
+    if (tipe === "pegawai") {
+      const pegawai = await fetchPegawai(nim);
+      return NextResponse.json({
+        alreadyRecorded: false,
+        tipe,
+        nim: pegawai.nip,
+        nama: pegawai.nama,
+        programStudi: null,
+        pertanyaan,
+      });
+    }
+
+    const mahasiswa = await fetchMahasiswa(nim);
     return NextResponse.json({
       alreadyRecorded: false,
+      tipe,
       nim: mahasiswa.nim,
       nama: mahasiswa.nama,
       programStudi: mahasiswa.programStudi,

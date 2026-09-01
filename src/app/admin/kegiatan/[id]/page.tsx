@@ -31,6 +31,7 @@ export default async function KegiatanDetailPage({ params }: Props) {
   const publicUrl = `${env.APP_URL}/k/${kegiatan.slug}`;
   const rows = kegiatan.kehadiran.map((k) => ({
     id: k.id,
+    tipePeserta: k.tipePeserta,
     nim: k.nim,
     nama: k.nama,
     programStudi: k.programStudi,
