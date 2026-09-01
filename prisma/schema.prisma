@@ -1,0 +1,57 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  kegiatan Kegiatan[]
+}
+
+model Kegiatan {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  nama          String
+  deskripsi     String?
+  lokasi        String
+  waktuMulai    DateTime
+  waktuSelesai  DateTime
+  ditutupManual Boolean  @default(false)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy Admin       @relation(fields: [createdById], references: [id])
+  kehadiran Kehadiran[]
+
+  @@index([waktuMulai, waktuSelesai])
+}
+
+model Kehadiran {
+  id                    String   @id @default(uuid())
+  kegiatanId            String
+  nim                   String
+  nama                  String
+  programStudi          String
+  programStudiSevimaId  String?
+  waktuKonfirmasi       DateTime @default(now())
+  ipAddress             String?
+  userAgent             String?
+
+  kegiatan Kegiatan @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+
+  @@unique([kegiatanId, nim])
+  @@index([kegiatanId])
+  @@index([nim])
+}

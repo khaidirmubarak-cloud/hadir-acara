@@ -1,0 +1,34 @@
+# Kalau VPS kampus sudah punya instance Postgres bersama: hapus service `db` di bawah,
+# hapus `depends_on`, dan hapus override DATABASE_URL di `environment:` (biarkan nilai
+# dari .env lewat `env_file:` dipakai, arahkan ke instance Postgres yang sudah ada).
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://daftar_hadir:${DB_PASSWORD:-daftar_hadir}@db:5432/daftar_hadir?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: daftar_hadir
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-daftar_hadir}
+      POSTGRES_DB: daftar_hadir
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daftar_hadir"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db_data:
