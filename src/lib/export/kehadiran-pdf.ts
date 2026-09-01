@@ -2,13 +2,15 @@ import PDFDocument from "pdfkit";
 import { formatWita } from "@/lib/timezone";
 import type { ExportKegiatanInfo, ExportKehadiranRow } from "./kehadiran-excel";
 
+// Total HARUS <= lebar konten A4 (595.28 - margin kiri/kanan 40pt = 515.28pt),
+// kalau tidak tabel meluber ke luar tepi kertas.
 const COLS = [
-  { label: "No", width: 30 },
-  { label: "Tipe", width: 75 },
-  { label: "NIM/NIP", width: 95 },
-  { label: "Nama", width: 140 },
-  { label: "Program Studi", width: 140 },
-  { label: "Waktu Konfirmasi", width: 105 },
+  { label: "No", width: 20 },
+  { label: "Tipe", width: 65 },
+  { label: "NIM/NIP", width: 75 },
+  { label: "Nama", width: 115 },
+  { label: "Program Studi", width: 145 },
+  { label: "Waktu Konfirmasi", width: 90 },
 ];
 
 export async function buildKehadiranPdf(kegiatan: ExportKegiatanInfo, rows: ExportKehadiranRow[]): Promise<Buffer> {
@@ -86,7 +88,15 @@ export async function buildKehadiranPdf(kegiatan: ExportKegiatanInfo, rows: Expo
       values.forEach((val, i) => {
         const x = colX(i);
         doc.rect(x, top, COLS[i].width, rowH).stroke("#cccccc");
-        doc.text(val, x + 4, top + 6, { width: COLS[i].width - 8, ellipsis: true, lineBreak: false });
+        // `height` wajib disertakan supaya ellipsis benar-benar memotong satu baris,
+        // tanpa itu pdfkit tetap membungkus teks panjang ke baris kedua yang menindih
+        // baris tabel di bawahnya (rowH tetap, tidak menyesuaikan tinggi konten).
+        doc.text(val, x + 4, top + 6, {
+          width: COLS[i].width - 8,
+          height: rowH - 8,
+          ellipsis: true,
+          lineBreak: false,
+        });
       });
       doc.y = top + rowH;
     });
