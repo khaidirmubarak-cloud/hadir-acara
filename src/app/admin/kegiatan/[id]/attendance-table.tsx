@@ -35,6 +35,24 @@ export default function AttendanceTable({
   pertanyaan: Pertanyaan[];
 }) {
   const [rows, setRows] = useState<KehadiranRow[]>(initialRows);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(row: KehadiranRow) {
+    if (!confirm(`Hapus data kehadiran ${row.nama} (${row.nim})? Tindakan ini tidak bisa dibatalkan.`)) return;
+
+    setDeletingId(row.id);
+    try {
+      const res = await fetch(`/api/admin/kegiatan/${kegiatanId}/kehadiran/${row.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error ?? "Gagal menghapus data kehadiran");
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +100,7 @@ export default function AttendanceTable({
                     {p.teks}
                   </th>
                 ))}
+                <th className="px-4 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -96,6 +115,15 @@ export default function AttendanceTable({
                       {r.jawaban.find((j) => j.pertanyaanId === p.id)?.jawaban ?? "—"}
                     </td>
                   ))}
+                  <td className="px-4 py-2 text-right">
+                    <button
+                      onClick={() => handleDelete(r)}
+                      disabled={deletingId === r.id}
+                      className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {deletingId === r.id ? "Menghapus..." : "Hapus"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
