@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# Passenger restart trigger dir (cPanel deploy) — touch tmp/restart.txt to reload the app
+/tmp/
+
 # production
 /build
 
