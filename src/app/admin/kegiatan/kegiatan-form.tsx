@@ -29,9 +29,26 @@ export default function KegiatanForm({ mode, kegiatanId, initialValues }: Props)
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  function validate(): string | null {
+    if (!values.nama.trim()) return "Nama kegiatan wajib diisi";
+    if (!values.lokasi.trim()) return "Lokasi wajib diisi";
+    const datetimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+    if (!datetimePattern.test(values.waktuMulai)) return "Waktu mulai belum lengkap — isi tanggal dan jam";
+    if (!datetimePattern.test(values.waktuSelesai)) return "Waktu selesai belum lengkap — isi tanggal dan jam";
+    if (values.waktuSelesai <= values.waktuMulai) return "Waktu selesai harus setelah waktu mulai";
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
     try {
       const url = mode === "create" ? "/api/admin/kegiatan" : `/api/admin/kegiatan/${kegiatanId}`;
@@ -58,7 +75,11 @@ export default function KegiatanForm({ mode, kegiatanId, initialValues }: Props)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 max-w-lg space-y-4 rounded-lg border border-gray-200 bg-white p-6">
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="mt-6 max-w-lg space-y-4 rounded-lg border border-gray-200 bg-white p-6"
+    >
       <div>
         <label className="block text-sm font-medium text-gray-700">Nama Kegiatan</label>
         <input
