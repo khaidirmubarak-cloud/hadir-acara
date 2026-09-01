@@ -10,3 +10,13 @@ export const nimSchema = z
 export const kehadiranLookupSchema = z.object({
   nim: nimSchema,
 });
+
+export const jawabanKuisionerSchema = z.object({
+  pertanyaanId: z.string().uuid(),
+  jawaban: z.string().trim().min(1, "Jawaban wajib diisi").max(1000, "Jawaban maksimal 1000 karakter"),
+});
+
+export const kehadiranConfirmSchema = z.object({
+  nim: nimSchema,
+  jawaban: z.array(jawabanKuisionerSchema).max(10),
+});

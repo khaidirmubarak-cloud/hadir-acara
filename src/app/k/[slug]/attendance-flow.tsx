@@ -6,15 +6,18 @@ type Props = {
   slug: string;
 };
 
+type Pertanyaan = { id: string; teks: string };
+
 type LookupResult =
   | { alreadyRecorded: true; nama: string; waktuKonfirmasi: string }
-  | { alreadyRecorded: false; nim: string; nama: string; programStudi: string };
+  | { alreadyRecorded: false; nim: string; nama: string; programStudi: string; pertanyaan: Pertanyaan[] };
 
 export default function AttendanceFlow({ slug }: Props) {
   const [nim, setNim] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookup, setLookup] = useState<LookupResult | null>(null);
+  const [jawaban, setJawaban] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<{ nama: string; waktuKonfirmasi: string } | null>(null);
 
   async function handleLookup(e: React.FormEvent) {
@@ -42,12 +45,25 @@ export default function AttendanceFlow({ slug }: Props) {
 
   async function handleConfirm() {
     setError(null);
+
+    if (lookup && !lookup.alreadyRecorded) {
+      const belumDiisi = lookup.pertanyaan.some((p) => !jawaban[p.id]?.trim());
+      if (belumDiisi) {
+        setError("Semua pertanyaan kuisioner wajib diisi");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
+      const jawabanPayload =
+        lookup && !lookup.alreadyRecorded
+          ? lookup.pertanyaan.map((p) => ({ pertanyaanId: p.id, jawaban: jawaban[p.id]?.trim() ?? "" }))
+          : [];
       const res = await fetch(`/api/public/kegiatan/${slug}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nim }),
+        body: JSON.stringify({ nim, jawaban: jawabanPayload }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -65,6 +81,7 @@ export default function AttendanceFlow({ slug }: Props) {
   function reset() {
     setNim("");
     setLookup(null);
+    setJawaban({});
     setSuccess(null);
     setError(null);
   }
@@ -116,6 +133,26 @@ export default function AttendanceFlow({ slug }: Props) {
             <span className="font-medium text-gray-900">{lookup.programStudi}</span>
           </div>
         </div>
+
+        {lookup.pertanyaan.length > 0 && (
+          <div className="mt-4 space-y-3">
+            {lookup.pertanyaan.map((p) => (
+              <div key={p.id}>
+                <label htmlFor={`pertanyaan-${p.id}`} className="block text-sm font-medium text-gray-700">
+                  {p.teks}
+                </label>
+                <textarea
+                  id={`pertanyaan-${p.id}`}
+                  required
+                  rows={2}
+                  value={jawaban[p.id] ?? ""}
+                  onChange={(e) => setJawaban((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 

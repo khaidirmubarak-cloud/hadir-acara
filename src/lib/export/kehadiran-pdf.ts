@@ -1,19 +1,29 @@
 import PDFDocument from "pdfkit";
 import { formatWita } from "@/lib/timezone";
-import type { ExportKegiatanInfo, ExportKehadiranRow } from "./kehadiran-excel";
+import type { ExportKegiatanInfo, ExportKehadiranRow, ExportPertanyaan } from "./kehadiran-excel";
 
-const COLS = [
+const BASE_COLS = [
   { label: "No", width: 30 },
   { label: "NIM", width: 90 },
-  { label: "Nama", width: 160 },
-  { label: "Program Studi", width: 160 },
-  { label: "Waktu Konfirmasi", width: 110 },
+  { label: "Nama", width: 130 },
+  { label: "Program Studi", width: 130 },
+  { label: "Waktu Konfirmasi", width: 100 },
 ];
 
 export async function buildKehadiranPdf(
   kegiatan: ExportKegiatanInfo,
   rows: ExportKehadiranRow[],
+  pertanyaan: ExportPertanyaan[] = [],
 ): Promise<Buffer> {
+  // Sisa lebar halaman A4 (dikurangi margin) dibagi rata ke kolom pertanyaan,
+  // supaya tabel tetap muat satu halaman berapa pun jumlah pertanyaannya.
+  const pageContentWidth = 595.28 - 40 * 2;
+  const baseWidth = BASE_COLS.reduce((sum, c) => sum + c.width, 0);
+  const questionColWidth = pertanyaan.length > 0
+    ? Math.max(80, (pageContentWidth - baseWidth) / pertanyaan.length)
+    : 0;
+  const COLS = [...BASE_COLS, ...pertanyaan.map((p) => ({ label: p.teks, width: questionColWidth }))];
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 40 });
     const chunks: Buffer[] = [];
@@ -77,7 +87,14 @@ export async function buildKehadiranPdf(
     rows.forEach((row, index) => {
       ensureSpace();
       const top = doc.y;
-      const values = [String(index + 1), row.nim, row.nama, row.programStudi, formatWita(row.waktuKonfirmasi)];
+      const values = [
+        String(index + 1),
+        row.nim,
+        row.nama,
+        row.programStudi,
+        formatWita(row.waktuKonfirmasi),
+        ...row.jawaban,
+      ];
       values.forEach((val, i) => {
         const x = colX(i);
         doc.rect(x, top, COLS[i].width, rowH).stroke("#cccccc");

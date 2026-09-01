@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Data tidak valid" }, { status: 400 });
     }
 
-    const { nama, deskripsi, lokasi, waktuMulai, waktuSelesai } = parsed.data;
+    const { nama, deskripsi, lokasi, waktuMulai, waktuSelesai, pertanyaan } = parsed.data;
 
     let slug = generateKegiatanSlug();
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
         waktuMulai: parseWitaLocalInput(waktuMulai),
         waktuSelesai: parseWitaLocalInput(waktuSelesai),
         createdById: session.adminId,
+        pertanyaan: {
+          create: pertanyaan.map((p, index) => ({ teks: p.teks, urutan: index })),
+        },
       },
     });
 

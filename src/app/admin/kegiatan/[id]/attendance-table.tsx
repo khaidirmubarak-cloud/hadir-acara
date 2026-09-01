@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+type JawabanRow = { pertanyaanId: string; jawaban: string };
+
 type KehadiranRow = {
   id: string;
   nim: string;
   nama: string;
   programStudi: string;
   waktuKonfirmasi: string;
+  jawaban: JawabanRow[];
 };
+
+type Pertanyaan = { id: string; teks: string };
 
 const POLL_INTERVAL_MS = 12_000;
 
@@ -23,9 +28,11 @@ function formatWaktu(iso: string): string {
 export default function AttendanceTable({
   kegiatanId,
   initialRows,
+  pertanyaan,
 }: {
   kegiatanId: string;
   initialRows: KehadiranRow[];
+  pertanyaan: Pertanyaan[];
 }) {
   const [rows, setRows] = useState<KehadiranRow[]>(initialRows);
 
@@ -70,6 +77,11 @@ export default function AttendanceTable({
                 <th className="px-4 py-2">Nama</th>
                 <th className="px-4 py-2">Program Studi</th>
                 <th className="px-4 py-2">Waktu</th>
+                {pertanyaan.map((p) => (
+                  <th key={p.id} className="px-4 py-2">
+                    {p.teks}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -79,6 +91,11 @@ export default function AttendanceTable({
                   <td className="px-4 py-2 font-medium text-gray-900">{r.nama}</td>
                   <td className="px-4 py-2 text-gray-500">{r.programStudi}</td>
                   <td className="px-4 py-2 text-gray-500">{formatWaktu(r.waktuKonfirmasi)}</td>
+                  {pertanyaan.map((p) => (
+                    <td key={p.id} className="max-w-xs px-4 py-2 text-gray-500">
+                      {r.jawaban.find((j) => j.pertanyaanId === p.id)?.jawaban ?? "—"}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

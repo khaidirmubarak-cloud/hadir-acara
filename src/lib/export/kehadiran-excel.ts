@@ -6,6 +6,8 @@ export type ExportKehadiranRow = {
   nama: string;
   programStudi: string;
   waktuKonfirmasi: Date;
+  // Satu jawaban per pertanyaan, urutan mengikuti `pertanyaan` di bawah.
+  jawaban: string[];
 };
 
 export type ExportKegiatanInfo = {
@@ -15,9 +17,15 @@ export type ExportKegiatanInfo = {
   waktuSelesai: Date;
 };
 
+export type ExportPertanyaan = {
+  id: string;
+  teks: string;
+};
+
 export async function buildKehadiranExcel(
   kegiatan: ExportKegiatanInfo,
   rows: ExportKehadiranRow[],
+  pertanyaan: ExportPertanyaan[] = [],
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Daftar Hadir");
@@ -31,7 +39,14 @@ export async function buildKehadiranExcel(
   sheet.addRow(["Jumlah Peserta", String(rows.length)]);
   sheet.addRow([]);
 
-  const header = sheet.addRow(["No", "NIM", "Nama", "Program Studi", "Waktu Konfirmasi"]);
+  const header = sheet.addRow([
+    "No",
+    "NIM",
+    "Nama",
+    "Program Studi",
+    "Waktu Konfirmasi",
+    ...pertanyaan.map((p) => p.teks),
+  ]);
   header.font = { bold: true };
   header.eachCell((cell) => {
     cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -39,7 +54,14 @@ export async function buildKehadiranExcel(
   });
 
   rows.forEach((row, index) => {
-    const r = sheet.addRow([index + 1, row.nim, row.nama, row.programStudi, formatWita(row.waktuKonfirmasi)]);
+    const r = sheet.addRow([
+      index + 1,
+      row.nim,
+      row.nama,
+      row.programStudi,
+      formatWita(row.waktuKonfirmasi),
+      ...row.jawaban,
+    ]);
     r.eachCell((cell) => {
       cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
     });
@@ -50,6 +72,9 @@ export async function buildKehadiranExcel(
   sheet.getColumn(3).width = 32;
   sheet.getColumn(4).width = 32;
   sheet.getColumn(5).width = 22;
+  pertanyaan.forEach((_, i) => {
+    sheet.getColumn(6 + i).width = 36;
+  });
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);

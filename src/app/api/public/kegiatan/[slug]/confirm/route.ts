@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { computeKegiatanStatus } from "@/lib/kegiatan-status";
-import { kehadiranLookupSchema } from "@/lib/validation/kehadiran";
+import { kehadiranConfirmSchema } from "@/lib/validation/kehadiran";
 import { fetchMahasiswa, SevimaError } from "@/lib/integrations/sevima";
 import { limiters, consumeRateLimit, getClientIp, RateLimitExceededError } from "@/lib/rate-limit";
 import { formatWita } from "@/lib/timezone";
@@ -30,11 +30,18 @@ export async function POST(req: NextRequest, { params }: Params) {
     const body = await req.json().catch(() => null);
     // Hanya `nim` yang dipakai — nama/prodi dari body (jika ada) diabaikan; keduanya
     // SELALU diambil ulang dari Sevima di sini, tidak pernah dipercaya dari klien.
-    const parsed = kehadiranLookupSchema.safeParse(body);
+    const parsed = kehadiranConfirmSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "NIM tidak valid" }, { status: 400 });
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Data tidak valid" }, { status: 400 });
     }
-    const { nim } = parsed.data;
+    const { nim, jawaban } = parsed.data;
+
+    const pertanyaan = await prisma.pertanyaan.findMany({ where: { kegiatanId: kegiatan.id } });
+    const jawabanByPertanyaanId = new Map(jawaban.map((j) => [j.pertanyaanId, j.jawaban]));
+    const missing = pertanyaan.some((p) => !jawabanByPertanyaanId.get(p.id)?.trim());
+    if (missing) {
+      return NextResponse.json({ error: "Semua pertanyaan kuisioner wajib diisi" }, { status: 400 });
+    }
 
     await consumeRateLimit(limiters.externalLookup, ip);
     const mahasiswa = await fetchMahasiswa(nim);
@@ -50,6 +57,12 @@ export async function POST(req: NextRequest, { params }: Params) {
         programStudiSevimaId: mahasiswa.programStudiSevimaId || null,
         ipAddress: ip,
         userAgent,
+        jawaban: {
+          create: pertanyaan.map((p) => ({
+            pertanyaanId: p.id,
+            jawaban: jawabanByPertanyaanId.get(p.id)!.trim(),
+          })),
+        },
       },
     });
 

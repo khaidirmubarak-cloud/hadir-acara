@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+// `id` hadir hanya saat edit (pertanyaan yang sudah ada di DB) — dipakai server
+// untuk membedakan update vs pertanyaan baru, dan melindungi pertanyaan yang
+// sudah punya jawaban peserta dari terhapus tanpa sengaja.
+export const pertanyaanInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  teks: z.string().trim().min(3, "Pertanyaan minimal 3 karakter").max(300),
+});
+
 export const kegiatanInputSchema = z
   .object({
     nama: z.string().trim().min(3, "Nama kegiatan minimal 3 karakter").max(200),
@@ -10,6 +18,7 @@ export const kegiatanInputSchema = z
     waktuSelesai: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Format waktu selesai tidak valid"),
+    pertanyaan: z.array(pertanyaanInputSchema).max(10, "Maksimal 10 pertanyaan kuisioner").default([]),
   })
   .refine((data) => data.waktuSelesai > data.waktuMulai, {
     message: "Waktu selesai harus setelah waktu mulai",
@@ -17,3 +26,4 @@ export const kegiatanInputSchema = z
   });
 
 export type KegiatanInput = z.infer<typeof kegiatanInputSchema>;
+export type PertanyaanInput = z.infer<typeof pertanyaanInputSchema>;

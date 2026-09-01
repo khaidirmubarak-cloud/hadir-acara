@@ -7,7 +7,10 @@ type Props = { params: Promise<{ id: string }> };
 
 export default async function EditKegiatanPage({ params }: Props) {
   const { id } = await params;
-  const kegiatan = await prisma.kegiatan.findUnique({ where: { id } });
+  const kegiatan = await prisma.kegiatan.findUnique({
+    where: { id },
+    include: { pertanyaan: { orderBy: { urutan: "asc" } } },
+  });
   if (!kegiatan) notFound();
 
   return (
@@ -22,6 +25,7 @@ export default async function EditKegiatanPage({ params }: Props) {
           lokasi: kegiatan.lokasi,
           waktuMulai: toWitaLocalInputValue(kegiatan.waktuMulai),
           waktuSelesai: toWitaLocalInputValue(kegiatan.waktuSelesai),
+          pertanyaan: kegiatan.pertanyaan.map((p) => ({ id: p.id, teks: p.teks })),
         }}
       />
     </div>

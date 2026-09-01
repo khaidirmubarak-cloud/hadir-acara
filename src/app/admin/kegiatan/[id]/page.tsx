@@ -20,7 +20,10 @@ export default async function KegiatanDetailPage({ params }: Props) {
   const { id } = await params;
   const kegiatan = await prisma.kegiatan.findUnique({
     where: { id },
-    include: { kehadiran: { orderBy: { waktuKonfirmasi: "desc" } } },
+    include: {
+      kehadiran: { orderBy: { waktuKonfirmasi: "desc" }, include: { jawaban: true } },
+      pertanyaan: { orderBy: { urutan: "asc" } },
+    },
   });
   if (!kegiatan) notFound();
 
@@ -32,7 +35,9 @@ export default async function KegiatanDetailPage({ params }: Props) {
     nama: k.nama,
     programStudi: k.programStudi,
     waktuKonfirmasi: k.waktuKonfirmasi.toISOString(),
+    jawaban: k.jawaban.map((j) => ({ pertanyaanId: j.pertanyaanId, jawaban: j.jawaban })),
   }));
+  const pertanyaan = kegiatan.pertanyaan.map((p) => ({ id: p.id, teks: p.teks }));
 
   return (
     <div className="space-y-6">
@@ -99,7 +104,7 @@ export default async function KegiatanDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <AttendanceTable kegiatanId={kegiatan.id} initialRows={rows} />
+      <AttendanceTable kegiatanId={kegiatan.id} initialRows={rows} pertanyaan={pertanyaan} />
     </div>
   );
 }

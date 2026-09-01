@@ -13,7 +13,10 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const kegiatan = await prisma.kegiatan.findUnique({
     where: { id },
-    include: { kehadiran: { orderBy: { waktuKonfirmasi: "asc" } } },
+    include: {
+      kehadiran: { orderBy: { waktuKonfirmasi: "asc" }, include: { jawaban: true } },
+      pertanyaan: { orderBy: { urutan: "asc" } },
+    },
   });
   if (!kegiatan) return NextResponse.json({ error: "Kegiatan tidak ditemukan" }, { status: 404 });
 
@@ -23,17 +26,22 @@ export async function GET(req: NextRequest, { params }: Params) {
     waktuMulai: kegiatan.waktuMulai,
     waktuSelesai: kegiatan.waktuSelesai,
   };
-  const rows = kegiatan.kehadiran.map((k) => ({
-    nim: k.nim,
-    nama: k.nama,
-    programStudi: k.programStudi,
-    waktuKonfirmasi: k.waktuKonfirmasi,
-  }));
+  const pertanyaan = kegiatan.pertanyaan.map((p) => ({ id: p.id, teks: p.teks }));
+  const rows = kegiatan.kehadiran.map((k) => {
+    const jawabanById = new Map(k.jawaban.map((j) => [j.pertanyaanId, j.jawaban]));
+    return {
+      nim: k.nim,
+      nama: k.nama,
+      programStudi: k.programStudi,
+      waktuKonfirmasi: k.waktuKonfirmasi,
+      jawaban: pertanyaan.map((p) => jawabanById.get(p.id) ?? ""),
+    };
+  });
 
   const safeName = kegiatan.nama.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 60);
 
   if (format === "pdf") {
-    const buffer = await buildKehadiranPdf(info, rows);
+    const buffer = await buildKehadiranPdf(info, rows, pertanyaan);
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
@@ -42,7 +50,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     });
   }
 
-  const buffer = await buildKehadiranExcel(info, rows);
+  const buffer = await buildKehadiranExcel(info, rows, pertanyaan);
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

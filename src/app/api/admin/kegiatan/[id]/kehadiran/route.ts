@@ -10,6 +10,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const kehadiran = await prisma.kehadiran.findMany({
     where: { kegiatanId: id },
     orderBy: { waktuKonfirmasi: "desc" },
+    include: { jawaban: true },
   });
 
   return NextResponse.json({ kehadiran, total: kehadiran.length });

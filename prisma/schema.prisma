@@ -34,10 +34,26 @@ model Kegiatan {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  createdBy Admin       @relation(fields: [createdById], references: [id])
-  kehadiran Kehadiran[]
+  createdBy  Admin        @relation(fields: [createdById], references: [id])
+  kehadiran  Kehadiran[]
+  pertanyaan Pertanyaan[]
 
   @@index([waktuMulai, waktuSelesai])
+}
+
+// Pertanyaan kuisioner singkat yang ditentukan admin per-kegiatan, ditampilkan
+// setelah peserta konfirmasi NIM dan wajib diisi sebelum kehadiran tercatat.
+model Pertanyaan {
+  id         String   @id @default(uuid())
+  kegiatanId String
+  teks       String
+  urutan     Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  kegiatan Kegiatan            @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+  jawaban  JawabanKuisioner[]
+
+  @@index([kegiatanId])
 }
 
 model Kehadiran {
@@ -51,9 +67,24 @@ model Kehadiran {
   ipAddress             String?
   userAgent             String?  @db.Text
 
-  kegiatan Kegiatan @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+  kegiatan Kegiatan           @relation(fields: [kegiatanId], references: [id], onDelete: Cascade)
+  jawaban  JawabanKuisioner[]
 
   @@unique([kegiatanId, nim])
   @@index([kegiatanId])
   @@index([nim])
+}
+
+// Jawaban peserta untuk satu pertanyaan kuisioner, dicatat bersamaan dengan Kehadiran.
+model JawabanKuisioner {
+  id           String @id @default(uuid())
+  kehadiranId  String
+  pertanyaanId String
+  jawaban      String @db.Text
+
+  kehadiran  Kehadiran  @relation(fields: [kehadiranId], references: [id], onDelete: Cascade)
+  pertanyaan Pertanyaan @relation(fields: [pertanyaanId], references: [id], onDelete: Cascade)
+
+  @@unique([kehadiranId, pertanyaanId])
+  @@index([pertanyaanId])
 }

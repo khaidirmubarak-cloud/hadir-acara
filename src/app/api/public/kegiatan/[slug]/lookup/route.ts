@@ -47,11 +47,18 @@ export async function POST(req: NextRequest, { params }: Params) {
     await consumeRateLimit(limiters.externalLookup, ip);
     const mahasiswa = await fetchMahasiswa(nim);
 
+    const pertanyaan = await prisma.pertanyaan.findMany({
+      where: { kegiatanId: kegiatan.id },
+      orderBy: { urutan: "asc" },
+      select: { id: true, teks: true },
+    });
+
     return NextResponse.json({
       alreadyRecorded: false,
       nim: mahasiswa.nim,
       nama: mahasiswa.nama,
       programStudi: mahasiswa.programStudi,
+      pertanyaan,
     });
   } catch (err) {
     if (err instanceof RateLimitExceededError) {
