@@ -18,7 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             Daftar Hadir UIN Palopo
           </a>
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span>{session.name}</span>
+            <a href="/admin/akun" className="hover:text-gray-900">
+              {session.name}
+            </a>
             <LogoutButton />
           </div>
         </div>
