@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
-type Tipe = "mahasiswa" | "pegawai";
+type Tipe = "mahasiswa" | "pegawai" | "tamu";
 
 type Props = {
   slug: string;
   tipe: Tipe;
   // Ditampilkan hanya di layar input identitas awal (bukan di layar konfirmasi/sukses),
-  // dipakai untuk tautan pindah ke alur mahasiswa/pegawai yang lain.
+  // dipakai untuk tautan pindah ke alur mahasiswa/pegawai/tamu yang lain.
   belowAction?: React.ReactNode;
 };
 
@@ -16,7 +16,14 @@ type Pertanyaan = { id: string; teks: string };
 
 type LookupResult =
   | { alreadyRecorded: true; nama: string; waktuKonfirmasi: string }
-  | { alreadyRecorded: false; nim: string; nama: string; programStudi: string | null; pertanyaan: Pertanyaan[] };
+  | {
+      alreadyRecorded: false;
+      nim: string | null;
+      nama: string;
+      programStudi: string | null;
+      instansi?: string | null;
+      pertanyaan: Pertanyaan[];
+    };
 
 const LABEL: Record<Tipe, { identitas: string; placeholder: string; identitasSingkat: string }> = {
   mahasiswa: {
@@ -28,6 +35,11 @@ const LABEL: Record<Tipe, { identitas: string; placeholder: string; identitasSin
     identitas: "Nomor Induk Pegawai (NIP)",
     placeholder: "Masukkan NIP Anda",
     identitasSingkat: "NIP",
+  },
+  tamu: {
+    identitas: "Nama Lengkap",
+    placeholder: "Masukkan nama lengkap Anda",
+    identitasSingkat: "Nama",
   },
 };
 
@@ -43,6 +55,8 @@ function CheckBadge() {
 
 export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
   const [nim, setNim] = useState("");
+  const [namaTamu, setNamaTamu] = useState("");
+  const [instansiTamu, setInstansiTamu] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookup, setLookup] = useState<LookupResult | null>(null);
@@ -50,6 +64,10 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
   const [success, setSuccess] = useState<{ nama: string; waktuKonfirmasi: string } | null>(null);
 
   const label = LABEL[tipe];
+
+  function buildIdentitasPayload() {
+    return tipe === "tamu" ? { tipe, nama: namaTamu, instansi: instansiTamu } : { tipe, nim };
+  }
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -59,7 +77,7 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
       const res = await fetch(`/api/public/kegiatan/${slug}/lookup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipe, nim }),
+        body: JSON.stringify(buildIdentitasPayload()),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -94,7 +112,7 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
       const res = await fetch(`/api/public/kegiatan/${slug}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipe, nim, jawaban: jawabanPayload }),
+        body: JSON.stringify({ ...buildIdentitasPayload(), jawaban: jawabanPayload }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -111,6 +129,8 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
 
   function reset() {
     setNim("");
+    setNamaTamu("");
+    setInstansiTamu("");
     setLookup(null);
     setJawaban({});
     setSuccess(null);
@@ -149,10 +169,12 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
       <div>
         <h2 className="text-center text-lg font-bold text-gray-900">Konfirmasi Kehadiran</h2>
         <div className="mt-4 space-y-2 rounded-xl bg-green-50 p-4 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-500">{label.identitasSingkat}</span>
-            <span className="font-semibold text-gray-900">{lookup.nim}</span>
-          </div>
+          {lookup.nim && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">{label.identitasSingkat}</span>
+              <span className="font-semibold text-gray-900">{lookup.nim}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-500">Nama</span>
             <span className="font-semibold text-gray-900">{lookup.nama}</span>
@@ -161,6 +183,12 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
             <div className="flex justify-between">
               <span className="text-gray-500">Program Studi</span>
               <span className="font-semibold text-gray-900">{lookup.programStudi}</span>
+            </div>
+          )}
+          {lookup.instansi && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Instansi</span>
+              <span className="font-semibold text-gray-900">{lookup.instansi}</span>
             </div>
           )}
         </div>
@@ -209,20 +237,52 @@ export default function AttendanceFlow({ slug, tipe, belowAction }: Props) {
 
   return (
     <form onSubmit={handleLookup}>
-      <label htmlFor="nim" className="block text-sm font-medium text-gray-700">
-        {label.identitas}
-      </label>
-      <input
-        id="nim"
-        type="text"
-        inputMode="numeric"
-        required
-        autoFocus
-        value={nim}
-        onChange={(e) => setNim(e.target.value)}
-        placeholder={label.placeholder}
-        className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-3 text-base focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-      />
+      {tipe === "tamu" ? (
+        <>
+          <label htmlFor="namaTamu" className="block text-sm font-medium text-gray-700">
+            {label.identitas}
+          </label>
+          <input
+            id="namaTamu"
+            type="text"
+            required
+            autoFocus
+            value={namaTamu}
+            onChange={(e) => setNamaTamu(e.target.value)}
+            placeholder={label.placeholder}
+            className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-3 text-base focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+          />
+
+          <label htmlFor="instansiTamu" className="mt-4 block text-sm font-medium text-gray-700">
+            Asal Instansi (opsional)
+          </label>
+          <input
+            id="instansiTamu"
+            type="text"
+            value={instansiTamu}
+            onChange={(e) => setInstansiTamu(e.target.value)}
+            placeholder="Mis. nama instansi/lembaga Anda"
+            className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-3 text-base focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+          />
+        </>
+      ) : (
+        <>
+          <label htmlFor="nim" className="block text-sm font-medium text-gray-700">
+            {label.identitas}
+          </label>
+          <input
+            id="nim"
+            type="text"
+            inputMode="numeric"
+            required
+            autoFocus
+            value={nim}
+            onChange={(e) => setNim(e.target.value)}
+            placeholder={label.placeholder}
+            className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-3 text-base focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+          />
+        </>
+      )}
 
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 

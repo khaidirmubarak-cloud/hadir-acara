@@ -59,16 +59,22 @@ model Pertanyaan {
 enum TipePeserta {
   MAHASISWA
   PEGAWAI
+  TAMU
 }
 
 model Kehadiran {
   id                    String      @id @default(uuid())
   kegiatanId            String
   tipePeserta           TipePeserta @default(MAHASISWA)
-  nim                   String // NIM (mahasiswa) atau NIP (pegawai/dosen) — lihat tipePeserta
+  // NIM (mahasiswa) atau NIP (pegawai/dosen) — lihat tipePeserta. NULL untuk TAMU
+  // (tidak terdaftar di Sevima, tidak ada identitas resmi untuk dicek); MySQL tidak
+  // menganggap dua baris NULL sebagai duplikat pada unique index, jadi tamu boleh
+  // berkali-kali tercatat pada kegiatan yang sama tanpa melanggar @@unique di bawah.
+  nim                   String?
   nama                  String
   programStudi          String? // hanya terisi untuk mahasiswa; Sevima tidak menyediakan unit/jabatan pegawai
   programStudiSevimaId  String?
+  instansi              String? // hanya terisi untuk tamu — asal instansi/organisasi, self-reported
   waktuKonfirmasi       DateTime    @default(now())
   ipAddress             String?
   userAgent             String?     @db.Text

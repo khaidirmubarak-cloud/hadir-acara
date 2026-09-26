@@ -6,23 +6,31 @@ type JawabanRow = { pertanyaanId: string; jawaban: string };
 
 type KehadiranRow = {
   id: string;
-  tipePeserta: "MAHASISWA" | "PEGAWAI";
-  nim: string;
+  tipePeserta: "MAHASISWA" | "PEGAWAI" | "TAMU";
+  nim: string | null;
   nama: string;
   programStudi: string | null;
+  instansi: string | null;
   waktuKonfirmasi: string;
   jawaban: JawabanRow[];
 };
 
+const TIPE_BADGE_CLASS: Record<KehadiranRow["tipePeserta"], string> = {
+  MAHASISWA: "bg-green-100 text-green-700",
+  PEGAWAI: "bg-blue-100 text-blue-700",
+  TAMU: "bg-amber-100 text-amber-700",
+};
+
+const TIPE_BADGE_LABEL: Record<KehadiranRow["tipePeserta"], string> = {
+  MAHASISWA: "Mahasiswa",
+  PEGAWAI: "Dosen/Tendik",
+  TAMU: "Tamu",
+};
+
 function TipeBadge({ tipe }: { tipe: KehadiranRow["tipePeserta"] }) {
-  const isPegawai = tipe === "PEGAWAI";
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-        isPegawai ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
-      }`}
-    >
-      {isPegawai ? "Dosen/Tendik" : "Mahasiswa"}
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TIPE_BADGE_CLASS[tipe]}`}>
+      {TIPE_BADGE_LABEL[tipe]}
     </span>
   );
 }
@@ -95,7 +103,7 @@ export default function AttendanceTable({
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
-    return rows.filter((r) => r.nama.toLowerCase().includes(q) || r.nim.toLowerCase().includes(q));
+    return rows.filter((r) => r.nama.toLowerCase().includes(q) || r.nim?.toLowerCase().includes(q));
   }, [rows, search]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
@@ -141,7 +149,7 @@ export default function AttendanceTable({
                       <th className="px-4 py-2">Tipe</th>
                       <th className="px-4 py-2">NIM/NIP</th>
                       <th className="px-4 py-2">Nama</th>
-                      <th className="px-4 py-2">Program Studi</th>
+                      <th className="px-4 py-2">Prodi/Instansi</th>
                       <th className="px-4 py-2">Waktu</th>
                       {pertanyaan.map((p) => (
                         <th key={p.id} className="px-4 py-2">
@@ -157,9 +165,9 @@ export default function AttendanceTable({
                         <td className="px-4 py-2">
                           <TipeBadge tipe={r.tipePeserta} />
                         </td>
-                        <td className="px-4 py-2 text-gray-500">{r.nim}</td>
+                        <td className="px-4 py-2 text-gray-500">{r.nim ?? "—"}</td>
                         <td className="px-4 py-2 font-medium text-gray-900">{r.nama}</td>
-                        <td className="px-4 py-2 text-gray-500">{r.programStudi ?? "—"}</td>
+                        <td className="px-4 py-2 text-gray-500">{r.programStudi ?? r.instansi ?? "—"}</td>
                         <td className="px-4 py-2 text-gray-500">{formatWaktu(r.waktuKonfirmasi)}</td>
                         {pertanyaan.map((p) => (
                           <td key={p.id} className="max-w-xs px-4 py-2 text-gray-500">

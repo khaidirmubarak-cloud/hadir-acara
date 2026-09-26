@@ -30,6 +30,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     nim: k.nim,
     nama: k.nama,
     programStudi: k.programStudi,
+    instansi: k.instansi,
     waktuKonfirmasi: k.waktuKonfirmasi,
   }));
 

@@ -40,12 +40,20 @@ export default async function PublicKegiatanPage({ params }: Props) {
               slug={slug}
               tipe="mahasiswa"
               belowAction={
-                <Link
-                  href={`/k/${slug}/pegawai`}
-                  className="mt-3 block w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Saya Dosen/Tenaga Kependidikan
-                </Link>
+                <div className="mt-3 space-y-2">
+                  <Link
+                    href={`/k/${slug}/pegawai`}
+                    className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Saya Dosen/Tenaga Kependidikan
+                  </Link>
+                  <Link
+                    href={`/k/${slug}/tamu`}
+                    className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Saya Tamu/Bukan Sivitas Akademika
+                  </Link>
+                </div>
               }
             />
           )}

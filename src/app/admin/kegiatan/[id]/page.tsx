@@ -35,6 +35,7 @@ export default async function KegiatanDetailPage({ params }: Props) {
     nim: k.nim,
     nama: k.nama,
     programStudi: k.programStudi,
+    instansi: k.instansi,
     waktuKonfirmasi: k.waktuKonfirmasi.toISOString(),
     jawaban: k.jawaban.map((j) => ({ pertanyaanId: j.pertanyaanId, jawaban: j.jawaban })),
   }));

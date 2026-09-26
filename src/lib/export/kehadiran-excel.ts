@@ -2,11 +2,18 @@ import ExcelJS from "exceljs";
 import { formatWita } from "@/lib/timezone";
 
 export type ExportKehadiranRow = {
-  tipePeserta: "MAHASISWA" | "PEGAWAI";
-  nim: string;
+  tipePeserta: "MAHASISWA" | "PEGAWAI" | "TAMU";
+  nim: string | null;
   nama: string;
   programStudi: string | null;
+  instansi: string | null;
   waktuKonfirmasi: Date;
+};
+
+const TIPE_LABEL: Record<ExportKehadiranRow["tipePeserta"], string> = {
+  MAHASISWA: "Mahasiswa",
+  PEGAWAI: "Dosen/Tendik",
+  TAMU: "Tamu",
 };
 
 export type ExportKegiatanInfo = {
@@ -32,7 +39,7 @@ export async function buildKehadiranExcel(
   sheet.addRow(["Jumlah Peserta", String(rows.length)]);
   sheet.addRow([]);
 
-  const header = sheet.addRow(["No", "Tipe", "NIM/NIP", "Nama", "Program Studi", "Waktu Konfirmasi"]);
+  const header = sheet.addRow(["No", "Tipe", "NIM/NIP", "Nama", "Prodi/Instansi", "Waktu Konfirmasi"]);
   header.font = { bold: true };
   header.eachCell((cell) => {
     cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -42,10 +49,10 @@ export async function buildKehadiranExcel(
   rows.forEach((row, index) => {
     const r = sheet.addRow([
       index + 1,
-      row.tipePeserta === "PEGAWAI" ? "Dosen/Tendik" : "Mahasiswa",
-      row.nim,
+      TIPE_LABEL[row.tipePeserta],
+      row.nim ?? "—",
       row.nama,
-      row.programStudi ?? "—",
+      row.programStudi ?? row.instansi ?? "—",
       formatWita(row.waktuKonfirmasi),
     ]);
     r.eachCell((cell) => {

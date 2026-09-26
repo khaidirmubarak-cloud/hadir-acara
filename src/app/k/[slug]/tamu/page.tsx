@@ -7,7 +7,7 @@ import AttendanceFlow from "../attendance-flow";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export default async function PublicKegiatanPegawaiPage({ params }: Props) {
+export default async function PublicKegiatanTamuPage({ params }: Props) {
   const { slug } = await params;
   const kegiatan = await prisma.kegiatan.findUnique({ where: { slug } });
   if (!kegiatan) notFound();
@@ -22,7 +22,7 @@ export default async function PublicKegiatanPegawaiPage({ params }: Props) {
           lokasi={kegiatan.lokasi}
           waktuMulai={kegiatan.waktuMulai}
           waktuSelesai={kegiatan.waktuSelesai}
-          label="Daftar Hadir Dosen/Tenaga Kependidikan"
+          label="Daftar Hadir Tamu"
         />
 
         <div className="rounded-b-3xl bg-white px-6 pt-7 pb-7 shadow-lg">
@@ -39,7 +39,7 @@ export default async function PublicKegiatanPegawaiPage({ params }: Props) {
           {status === "open" && (
             <AttendanceFlow
               slug={slug}
-              tipe="pegawai"
+              tipe="tamu"
               belowAction={
                 <div className="mt-3 space-y-2">
                   <Link
@@ -49,10 +49,10 @@ export default async function PublicKegiatanPegawaiPage({ params }: Props) {
                     Saya Mahasiswa
                   </Link>
                   <Link
-                    href={`/k/${slug}/tamu`}
+                    href={`/k/${slug}/pegawai`}
                     className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
-                    Saya Tamu/Bukan Sivitas Akademika
+                    Saya Dosen/Tenaga Kependidikan
                   </Link>
                 </div>
               }

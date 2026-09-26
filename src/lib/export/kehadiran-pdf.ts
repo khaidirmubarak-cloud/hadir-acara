@@ -9,9 +9,15 @@ const COLS = [
   { label: "Tipe", width: 65 },
   { label: "NIM/NIP", width: 75 },
   { label: "Nama", width: 115 },
-  { label: "Program Studi", width: 145 },
+  { label: "Prodi/Instansi", width: 145 },
   { label: "Waktu Konfirmasi", width: 90 },
 ];
+
+const TIPE_LABEL: Record<ExportKehadiranRow["tipePeserta"], string> = {
+  MAHASISWA: "Mahasiswa",
+  PEGAWAI: "Dosen/Tendik",
+  TAMU: "Tamu",
+};
 
 export async function buildKehadiranPdf(kegiatan: ExportKegiatanInfo, rows: ExportKehadiranRow[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -79,10 +85,10 @@ export async function buildKehadiranPdf(kegiatan: ExportKegiatanInfo, rows: Expo
       const top = doc.y;
       const values = [
         String(index + 1),
-        row.tipePeserta === "PEGAWAI" ? "Dosen/Tendik" : "Mahasiswa",
-        row.nim,
+        TIPE_LABEL[row.tipePeserta],
+        row.nim ?? "—",
         row.nama,
-        row.programStudi ?? "—",
+        row.programStudi ?? row.instansi ?? "—",
         formatWita(row.waktuKonfirmasi),
       ];
       values.forEach((val, i) => {

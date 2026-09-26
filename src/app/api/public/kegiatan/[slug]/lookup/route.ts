@@ -31,7 +31,29 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Data tidak valid" }, { status: 400 });
     }
-    const { tipe, nim } = parsed.data;
+    const { tipe } = parsed.data;
+
+    // Tamu tidak punya NIM/NIP untuk dicek "sudah pernah hadir" atau di-lookup ke
+    // Sevima — data (nama/instansi) murni yang diketik peserta sendiri.
+    if (tipe === "tamu") {
+      await consumeRateLimit(limiters.externalLookup, ip);
+      const pertanyaan = await prisma.pertanyaan.findMany({
+        where: { kegiatanId: kegiatan.id },
+        orderBy: { urutan: "asc" },
+        select: { id: true, teks: true },
+      });
+      return NextResponse.json({
+        alreadyRecorded: false,
+        tipe,
+        nim: null,
+        nama: parsed.data.nama!.trim(),
+        programStudi: null,
+        instansi: parsed.data.instansi?.trim() || null,
+        pertanyaan,
+      });
+    }
+
+    const { nim } = parsed.data as { nim: string };
 
     const already = await prisma.kehadiran.findUnique({
       where: { kegiatanId_nim: { kegiatanId: kegiatan.id, nim } },
